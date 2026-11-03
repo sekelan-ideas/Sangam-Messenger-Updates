@@ -13,13 +13,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: sekelan-ideas/Sangam-releases
-          APK_URL: https://x0.at/brC9.zip
+          APK_URL: https://x0.at/Zz5x.zip
         run: |
           set -e
           curl -sL --retry 5 --retry-all-errors --retry-delay 5 --max-time 240 "$APK_URL" -o pack.zip
           unzip -o pack.zip
-          ls -la Sangam-v2.10.0.apk
-          sha256sum Sangam-v2.10.0.apk
-          cp Sangam-v2.10.0.apk Sangam.apk
-          gh release upload v2.10.0 Sangam-v2.10.0.apk Sangam.apk --clobber
-          gh release view v2.10.0 --json assets -q '.assets[].name'
+          ls -la Sangam-v2.10.1.apk
+          sha256sum Sangam-v2.10.1.apk
+          cp Sangam-v2.10.1.apk Sangam.apk
+          gh release upload v2.10.1 Sangam-v2.10.1.apk Sangam.apk --clobber
+          gh release view v2.10.1 --json assets -q '.assets[].name'
