@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sangam Privacy Policy</title>
+<style>body{font:16px/1.6 system-ui,Segoe UI,Arial,sans-serif;max-width:760px;margin:40px auto;padding:0 18px;color:#1f2a30}
+h1{color:#1f7f99}h2{margin-top:1.6em;color:#1f7f99}.badge{background:#eef8fb;border:1px solid #3cb3d6;padding:12px 14px;border-radius:8px}</style></head>
+<body>
+<h1>Sangam Privacy Policy</h1>
+<p><b>Last updated:</b> [DATE] &nbsp;&middot;&nbsp; <b>Applies to:</b> Sangam for Android and Sangam for Windows</p>
+<p>Sangam is a private messenger built in India. This page explains what we collect, why, and the choices you have.
+Contact: <b>[YOUR SUPPORT EMAIL]</b></p>
+
+<h2>What we collect</h2>
+<ul>
+<li><b>Account details:</b> your email address, username, display name, profile photo and status text. We do not ask for your phone number.</li>
+<li><b>Messages and media:</b> encrypted payloads for messages, photos, videos, documents and voice notes you send, and call signalling data, so they can be delivered to your recipients' devices.</li>
+<li><b>Device information:</b> a device identifier and public Signal Protocol keys (identity key, signed prekey and one-time prekeys) for each device you sign in on, and a push-notification token on Android.</li>
+<li><b>Technical data:</b> basic server logs such as timestamps and IP address (including hashed IP counters for login rate limiting), used for security and reliability.</li>
+</ul>
+
+<h2>Username check and username sign-in</h2>
+<p>During sign-up, the app calls the <code>username_available</code> database function to check whether a username is free (returning only <code>true</code> or <code>false</code>). When you sign in using a username instead of an email address, the app calls the rate-limited <code>login-lookup</code> Edge Function (limited to 10 requests per 10 minutes per IP address). By design, username sign-in reveals whether a username exists and resolves it to the account's email address to complete authentication.</p>
+
+<h2>How your messages are protected</h2>
+<div class="badge"><b>Signal Protocol Sessions &amp; AES-256-GCM:</b> Messages are encrypted per recipient device using Signal Protocol sessions (Curve25519 / XEdDSA / X3DH / Double Ratchet) over TLS before upload, and a database trigger (<code>trg_messages_strip_companion</code>) strips any legacy companion suffix on insert or update. Photos, voice notes and documents are encrypted client-side with AES-256-GCM before upload, and QR device-pairing and cloud backup blobs are encrypted with PBKDF2-HMAC-SHA256 (120,000 iterations) + AES-256-GCM. The Windows desktop client uses an in-repository JavaScript Signal Protocol implementation that has not been independently audited.</div>
+
+<h2>Where data is stored</h2>
+<p>Backend data is hosted on Supabase over TLS. Private keys and Signal session states on Android are stored in Android EncryptedSharedPreferences, and on Windows are stored using the Windows Data Protection API (DPAPI) via Electron <code>safeStorage</code>.</p>
+
+<h2>How we use data</h2>
+<p>Only to operate Sangam: deliver messages and calls, show your profile to people you chat with, send push notifications,
+keep accounts secure and prevent abuse. We do not sell your data, show ads, or use your messages to train AI models.</p>
+
+<h2>Sharing</h2>
+<p>We share data only with infrastructure providers needed to operate Sangam (Supabase for database and object storage; Google Firebase Cloud
+Messaging for Android wake-up notifications) or when required by applicable law.</p>
+
+<h2>Retention and deletion</h2>
+<p>You can delete your account at any time in the app (Settings / Menu &rarr; Delete my account). Calling the <code>delete-account</code> Edge Function performs the following actions and verifies each step before removing your login:</p>
+<ul>
+<li><b>Storage buckets:</b> deletes your avatar and sync blobs in <code>avatars</code> and your uploaded encrypted media files in <code>message-images</code>.</li>
+<li><b>Messages:</b> deletes all rows in <code>public.messages</code> where you are either the sender (<code>sender_id</code>) or the recipient (<code>recipient_id</code>). This removes both messages you sent to others and messages others sent to you from the server database; copies already decrypted and cached locally on another user's device remain on that device only.</li>
+<li><b>Groups:</b> for any group you created (<code>public.chat_groups</code>), if other members remain, leadership is transferred to the oldest co-leader (or else the oldest remaining member) and your membership row in <code>public.group_members</code> is removed while preserving the group for remaining members; if no other members remain, the empty group and its messages are deleted.</li>
+<li><b>Account &amp; device records:</b> deletes your rows in <code>public.call_chunks</code>, <code>public.calls</code>, <code>public.devices</code>, <code>public.prekey_bundles</code>, <code>public.backups</code>, <code>public.abuse_reports</code>, <code>public.desktop_pairings</code>, and <code>public.profiles</code>, and then deletes your <code>auth.users</code> record once profile deletion succeeds.</li>
+</ul>
+<p>Disappearing-message timers are enforced by the client.</p>
+
+<h2>Your rights &amp; Grievance Officer</h2>
+<p>You can access, export, correct or delete your data from within the app, or email <b>[YOUR SUPPORT EMAIL]</b>. Under India's Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and Digital Personal Data Protection Act, 2023, you may also contact our Grievance Officer at <b>[YOUR SUPPORT EMAIL]</b> (complaints acknowledged within 24 hours and resolved within 15 days).</p>
+
+<h2>Children</h2>
+<p>Sangam is not intended for children under 13. If you believe a child under 13 has created an account, please contact us and we will remove it promptly.</p>
+
+<h2>Reporting and blocking</h2>
+<p>You can block users and report abuse from within the app, or by emailing <b>[YOUR SUPPORT EMAIL]</b>.</p>
+
+<h2>Changes</h2>
+<p>If we change this policy we will update the date above and notify users in the app.</p>
+</body></html>

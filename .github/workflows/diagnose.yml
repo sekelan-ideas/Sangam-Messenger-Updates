@@ -1,0 +1,27 @@
+name: Diagnose
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dump
+        run: |
+          for f in $(find app/src/main/java -name '*.kt' | sort) app/build.gradle.kts CHANGELOG.md; do
+            echo ===BEGIN $f===
+            base64 -w0 "$f"
+            echo
+            echo ===END $f===
+          done
+          for f in $(find app/src/main/res -type f | sort); do
+            echo ===BEGIN $f===
+            base64 -w0 "$f"
+            echo
+            echo ===END $f===
+          done
+          echo ===DONE===

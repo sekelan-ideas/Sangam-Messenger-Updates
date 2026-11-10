@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sangam</string>
+    <string name="tagline">Where friends meet</string>
+    <string name="encrypted_note">End-to-end encrypted with Signal Protocol</string>
+    <string name="invite_text">Hi! I am on Sangam — a simple, private messenger. Add me with my username</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sangam_teal">#3CB3D6</color>
+    <color name="sangam_teal_dark">#2E8FAD</color>
+    <color name="sangam_orange">#F88A32</color>
+    <color name="sangam_text">#1F2A30</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>
