@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   build:
+    if: github.repository == 'sekelan-ideas/Sangam-Messenger'
     runs-on: ubuntu-latest
     steps:
       - name: Check out the code
