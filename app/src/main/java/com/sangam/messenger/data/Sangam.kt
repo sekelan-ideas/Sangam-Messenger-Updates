@@ -835,7 +835,7 @@ object Sangam {
         runCatching {
             if (seq == 1) {
                 runCatching {
-                    val myPub = crypto.localIdentityPubB64()
+                    val myPub = crypto?.localIdentityPubB64() ?: ""
                     client.from("call_chunks").insert(
                         CallChunkInsert(callId = callId, sender = me, seq = 0, pcmB64 = "K:$myPub")
                     )
@@ -843,7 +843,7 @@ object Sangam {
             }
             val peerPub = resolveCallPeerPub(callId)
             val payload = if (!peerPub.isNullOrBlank()) {
-                crypto.encryptCallFrame(callId, peerPub, pcmB64)
+                (crypto?.encryptCallFrame(callId, peerPub, pcmB64) ?: pcmB64)
             } else {
                 pcmB64
             }
@@ -867,7 +867,7 @@ object Sangam {
         }.decodeList<CallChunkRow>().sortedBy { it.seq }
         val out = mutableListOf<CallChunkRow>()
         for (r in rawRows) {
-            val (dec, learnedPub) = crypto.decryptCallFrame(callId, callPeerPubCache[callId] ?: defaultPeerPub, r.pcmB64)
+            val (dec, learnedPub) = (crypto ?: return@runCatching rawRows).decryptCallFrame(callId, callPeerPubCache[callId] ?: defaultPeerPub, r.pcmB64)
             if (!learnedPub.isNullOrBlank()) {
                 callPeerPubCache[callId] = learnedPub
             }
