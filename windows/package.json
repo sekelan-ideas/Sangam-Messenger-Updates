@@ -1,0 +1,23 @@
+{
+  "name": "sangam-desktop",
+  "productName": "Sangam",
+  "version": "1.0.0",
+  "description": "Sangam for Windows - where friends and family meet.",
+  "author": "Sangam",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "prepare-assets": "node scripts/prepare-assets.js",
+    "start": "npm run prepare-assets && electron .",
+    "dist:setup": "npm run prepare-assets && electron-builder --config electron-builder.config.js --win nsis",
+    "dist:store": "npm run prepare-assets && electron-builder --config electron-builder.config.js --win appx",
+    "dist:all": "npm run prepare-assets && electron-builder --config electron-builder.config.js --win nsis appx"
+  },
+  "devDependencies": {
+    "@fontsource/inter": "5.1.1",
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8",
+    "tailwindcss": "3.4.17"
+  }
+}

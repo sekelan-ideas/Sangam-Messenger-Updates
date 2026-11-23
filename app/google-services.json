@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "321731213951",
+    "project_id": "sangam-5396",
+    "storage_bucket": "sangam-5396.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:321731213951:android:68b080faf8c91d1ba7dd4a",
+        "android_client_info": {
+          "package_name": "com.sangam.messenger"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnCCJhEugqXNUzTkzsxHExBuduKzEJxHo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

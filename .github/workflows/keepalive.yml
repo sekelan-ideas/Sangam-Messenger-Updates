@@ -1,0 +1,32 @@
+name: Keep backend awake
+
+# Free Supabase projects pause after 7 days without database activity.
+# This tiny daily request calls public.username_available (which queries
+# public.profiles as SECURITY DEFINER) so the database stays awake even
+# after 0004b_profiles_lockdown.sql revokes direct anon SELECT on profiles.
+on:
+  schedule:
+    - cron: '23 3 * * *'   # daily 03:23 UTC (~08:53 IST)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          S=$(curl -s -o /tmp/ping.json -w "%{http_code}" --connect-timeout 30 \
+            -X POST "$SUPABASE_URL/rest/v1/rpc/username_available" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"p_username":"keepalive_ping"}')
+          echo "RPC ping status: $S"
+          if [ "$S" = "200" ]; then
+            echo "Backend database is awake."
+          else
+            echo "RPC returned $S — check whether 0004a_run_now.sql has been applied in the Supabase SQL Editor."
+          fi
