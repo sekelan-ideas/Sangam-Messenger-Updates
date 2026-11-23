@@ -20,8 +20,8 @@ android {
         applicationId = "com.sangam.messenger"
         minSdk = 26
         targetSdk = 34
-        versionCode = 129
-        versionName = "2.14.2"
+        versionCode = 130
+        versionName = "2.14.3"
 
         // Backend connection is injected at build time (CI env / -P properties).
         val supabaseUrl: String = (project.findProperty("SUPABASE_URL") as String?)
