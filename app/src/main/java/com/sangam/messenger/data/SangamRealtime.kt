@@ -77,7 +77,7 @@ object SangamRealtime {
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                if (text.contains(""postgres_changes"") || text.contains(""INSERT"") || text.contains(""UPDATE"")) {
+                if (text.contains("postgres_changes") || text.contains("INSERT") || text.contains("UPDATE")) {
                     events.tryEmit("change")
                 }
             }
