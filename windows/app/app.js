@@ -34,6 +34,11 @@
       knownPeerKeys: JSON.parse(safeGet("sangam_win_known_keys") || "{}"),
       knownPeerDevices: JSON.parse(safeGet("sangam_win_known_devs") || "{}"),
       keyChangedPeers: JSON.parse(safeGet("sangam_win_key_changed") || "{}"),
+      starredMsgs: JSON.parse(safeGet("sangam_win_starred") || "{}"),
+      mutedChats: JSON.parse(safeGet("sangam_win_muted") || "{}"),
+      blockedUsers: JSON.parse(safeGet("sangam_win_blocked") || "{}"),
+      inChatSearch: "",
+      decryptedMediaCache: {},
       newDevicePeers: JSON.parse(safeGet("sangam_win_new_dev") || "{}"),
       pinnedChats: JSON.parse(safeGet("sangam_win_pinned") || "[]"),
       archivedChats: JSON.parse(safeGet("sangam_win_archived") || "[]"),
@@ -1921,9 +1926,11 @@
             <div class="flex items-center justify-between mt-0.5 gap-1">
               <span class="text-[11px] ${item.typing ? "text-[#3CB3D6] font-semibold" : "opacity-75"} truncate">${escapeHtml(item.preview)}</span>
               <div class="flex items-center gap-1 shrink-0">
-                <button type="button" class="btn-pin-chat text-[10px] opacity-60 hover:opacity-100 px-1" title="${item.pinned ? "Unpin chat" : "Pin chat"}">📌</button>
-                <button type="button" class="btn-arch-chat text-[10px] opacity-60 hover:opacity-100 px-1" title="${item.archived ? "Unarchive chat" : "Archive chat"}">📥</button>
-                ${item.unread > 0 ? `<span class="px-1.5 py-0.5 rounded-full bg-[#F88A32] text-[#002630] font-bold text-[10px]">${item.unread}</span>` : ""}
+                <span class="chat-row-actions flex items-center gap-0.5">
+                  <button type="button" class="btn-pin-chat fluent-icon-btn !w-6 !h-6 ${item.pinned ? "text-[#3CB3D6]" : ""}" title="${item.pinned ? "Unpin chat" : "Pin chat"}"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></button>
+                  <button type="button" class="btn-arch-chat fluent-icon-btn !w-6 !h-6" title="${item.archived ? "Unarchive chat" : "Archive chat"}"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg></button>
+                </span>
+                ${item.unread > 0 ? `<span class="w-2 h-2 rounded-full bg-[#3CB3D6] inline-block shrink-0" title="${item.unread} unread"></span>` : ""}
               </div>
             </div>
           </div>
@@ -1965,8 +1972,8 @@
             <div class="text-[10px] opacity-65">@${escapeHtml(f.username)}</div>
           </div>
           <div class="flex items-center gap-1">
-            <button type="button" class="b-voice px-2.5 py-1 rounded-lg bg-[#3CB3D6]/20 text-[#3CB3D6] font-bold text-[11px]" title="Voice Call">📞</button>
-            <button type="button" class="b-video px-2.5 py-1 rounded-lg bg-[#5CAB72]/20 text-[#5CAB72] font-bold text-[11px]" title="Video Call">🎥</button>
+            <button type="button" class="b-voice fluent-icon-btn !w-7 !h-7" title="Voice Call"><svg class="w-3.5 h-3.5 text-[#3CB3D6]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></button>
+            <button type="button" class="b-video fluent-icon-btn !w-7 !h-7" title="Video Call"><svg class="w-3.5 h-3.5 text-[#5CAB72]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg></button>
           </div>
         `;
         d.querySelector(".b-voice").addEventListener("click", () => startWindowsCall(f.id, f.display_name, false));
@@ -2144,9 +2151,10 @@
           edited = true;
         }
         const isUndecryptable = !env;
+        if (state.inChatSearch && !(env ? previewText(env) : "").toLowerCase().includes(state.inChatSearch.toLowerCase())) return;
         const body = env ? previewText(env) : "Message could not be decrypted";
         const b = document.createElement("div");
-        b.className = `max-w-[68%] rounded-2xl px-4 py-2.5 text-xs shadow ${mine ? "self-end bg-[#3CB3D6] text-[#002630]" : "self-start glass-card"}`;
+        b.className = `msg-wrap ${mine ? "mine" : "peer"}`;
         const senderName = cur.isGroup && !mine ? (state.profiles[m.sender_id]?.display_name || "Member") : null;
         const timeStr = new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         const gm = (env?.b || "").match(/sangam:\/\/group\?id=([A-Za-z0-9\-]+)/);
@@ -2160,26 +2168,63 @@
         const tickStr = mine ? (m.read_at ? " ✓✓" : (m.delivered_at ? " ✓✓" : " ✓")) : "";
         const tickClass = mine && m.read_at ? "font-extrabold underline" : "";
 
+        const isStarred = Boolean(state.starredMsgs[m.id]);
+        const wfHeights = [8,14,20,11,24,18,10,22,26,15,12,24,19,9,16,22,14,10,18,24,12,16,9,14,20,11,8,12];
+        const wfBarsHtml = wfHeights.map((h, i) => `<span class="wf-bar" data-idx="${i}" style="height:${h}px"></span>`).join("");
+
         b.innerHTML = `
-          ${senderName ? `<div class="font-bold text-[10px] text-[#F88A32] mb-0.5">${escapeHtml(senderName)}</div>` : ""}
-          ${env?.p ? `<div class="text-[10px] px-2.5 py-1 rounded-lg bg-black/15 mb-1.5 truncate">↩ ${escapeHtml(env.p)}</div>` : ""}
-          <div class="leading-relaxed break-words text-[13px] ${isUndecryptable ? "italic opacity-75" : ""}">${escapeHtml(body)}${edited ? ` <span class="text-[10px] opacity-65">(edited)</span>` : ""}</div>
-          ${hasViewOnceClosed ? `<button type="button" class="btn-open-viewonce mt-1.5 px-3 py-1 rounded-xl bg-black/20 font-bold text-[11px] block">1️⃣ Tap to view once</button>` : ""}
-          ${mine && isViewOnce && state.viewOnceOpenedByPeer[m.id] ? `<div class="text-[10px] opacity-75 mt-1">Opened by recipient</div>` : ""}
-          ${hasEncPhoto ? `<img class="enc-photo-view hidden rounded-xl max-h-56 mt-1.5 object-cover border border-white/15" alt="Photo">` : ""}
-          ${hasEncDoc ? `<button type="button" class="btn-dl-doc mt-1.5 px-3 py-1 rounded-xl bg-black/20 font-bold text-[11px] block">⬇️ Download Document</button>` : ""}
-          ${hasEncAudio ? `<div class="mt-1.5"><button type="button" class="btn-play-audio px-3 py-1 rounded-xl bg-black/20 font-bold text-[11px]">▶️ Play Voice Note (${escapeHtml(env.b || "0")}s)</button><audio class="enc-audio-el hidden mt-1 w-full" controls></audio></div>` : ""}
-          ${gm ? `<button type="button" data-gid="${gm[1]}" class="btn-join-inline mt-2 px-3 py-1 rounded-xl bg-black/20 font-bold text-xs block">🌊 Join Sangam Circle</button>` : ""}
-          ${reactBadges ? `<div class="mt-1 inline-block px-2 py-0.5 rounded-full bg-black/20 text-[11px]">${escapeHtml(reactBadges)}</div>` : ""}
-          <div class="text-[10px] opacity-75 text-right mt-1 flex flex-wrap items-center justify-end gap-2">
-            ${env ? `<button type="button" class="btn-react hover:underline font-semibold" title="React">😊</button>` : ""}
-            <button type="button" class="btn-reply hover:underline font-semibold">Reply</button>
-            ${env ? `<button type="button" class="btn-forward hover:underline font-semibold">Forward</button>` : ""}
-            ${mine && env?.t === "t" ? `<button type="button" class="btn-edit-msg hover:underline font-semibold">Edit</button>` : ""}
-            ${mine ? `<button type="button" class="btn-del-msg hover:underline font-semibold">Delete</button>` : ""}
-            <span>${timeStr}<span class="${tickClass}">${tickStr}</span></span>
+          <div class="rounded-2xl px-3.5 py-2.5 text-xs shadow-sm ${mine ? "msg-bubble-mine" : "msg-bubble-peer"} w-full">
+            ${senderName ? `<div class="font-semibold text-[11px] text-[#3CB3D6] mb-0.5">${escapeHtml(senderName)}</div>` : ""}
+            ${env?.p ? `<div class="text-[11px] px-2.5 py-1 rounded-lg bg-black/20 border-l-2 border-[#3CB3D6] mb-1.5 truncate opacity-85">${escapeHtml(env.p)}</div>` : ""}
+            ${!hasEncAudio ? `<div class="leading-relaxed break-words text-[13px] ${isUndecryptable ? "italic opacity-65" : ""}">${escapeHtml(body)}${edited ? ` <span class="text-[10px] opacity-60">(edited)</span>` : ""}</div>` : ""}
+            ${hasViewOnceClosed ? `<button type="button" class="btn-open-viewonce mt-1.5 px-3 py-1.5 rounded-xl bg-black/25 hover:bg-black/35 font-semibold text-[11px] inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-[#3CB3D6]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><path d="M12 8v8"/></svg><span>View once photo</span></button>` : ""}
+            ${mine && isViewOnce && state.viewOnceOpenedByPeer[m.id] ? `<div class="text-[10px] opacity-65 mt-1">Opened by recipient</div>` : ""}
+            ${hasEncPhoto ? `<img class="enc-photo-view hidden rounded-xl max-h-60 mt-1.5 object-cover border border-white/10" alt="Photo">` : ""}
+            ${hasEncDoc ? `<button type="button" class="btn-dl-doc mt-1.5 px-3 py-1.5 rounded-xl bg-black/25 hover:bg-black/35 font-semibold text-[11px] inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-[#5CAB72]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg><span>Download ${escapeHtml(env.b || "Document")}</span></button>` : ""}
+            ${hasEncAudio ? `
+              <div class="wf-player">
+                <button type="button" class="btn-play-audio wf-play-btn" title="Play / Pause">
+                  <svg class="wf-icon-play w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>
+                  <svg class="wf-icon-pause hidden w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                </button>
+                <div class="flex-1 flex flex-col gap-1">
+                  <div class="wf-bars">${wfBarsHtml}</div>
+                  <div class="flex items-center justify-between text-[10px] opacity-70 font-mono">
+                    <span class="wf-time">0:00 / 0:${String(env.b || "0").padStart(2, "0")}</span>
+                  </div>
+                </div>
+                <button type="button" class="wf-speed px-2 py-0.5 rounded-full border border-white/15 text-[10px] font-semibold opacity-80 hover:opacity-100">1x</button>
+                <audio class="enc-audio-el hidden"></audio>
+              </div>
+            ` : ""}
+            ${gm ? `<button type="button" data-gid="${gm[1]}" class="btn-join-inline mt-2 px-3 py-1.5 rounded-xl bg-[#3CB3D6]/20 text-[#3CB3D6] font-semibold text-xs inline-flex items-center gap-1.5">Join Sangam Circle</button>` : ""}
+            ${reactBadges ? `<div class="mt-1 inline-block px-2 py-0.5 rounded-full bg-black/25 text-[11px]">${escapeHtml(reactBadges)}</div>` : ""}
+            <div class="text-[10px] opacity-60 text-right mt-1 flex items-center justify-end gap-1.5">
+              ${isStarred ? `<svg class="w-2.5 h-2.5 text-[#F88A32]" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` : ""}
+              <span>${timeStr}<span class="${tickClass}">${tickStr}</span></span>
+            </div>
+          </div>
+
+          <!-- Floating Hover Action Pill (Crisp SVG Vector Icons) -->
+          <div class="msg-hover-bar rounded-xl px-1.5 py-1 flex items-center gap-0.5 mt-1">
+            ${env ? `<button type="button" class="btn-react fluent-icon-btn !w-7 !h-7" title="React"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg></button>` : ""}
+            <button type="button" class="btn-reply fluent-icon-btn !w-7 !h-7" title="Reply"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
+            <button type="button" class="btn-star-msg fluent-icon-btn !w-7 !h-7 ${isStarred ? "text-[#F88A32]" : ""}" title="${isStarred ? "Unstar" : "Star"}"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="${isStarred ? "currentColor" : "none"}" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+            ${env ? `<button type="button" class="btn-forward fluent-icon-btn !w-7 !h-7" title="Forward"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg></button>` : ""}
+            ${mine && env?.t === "t" ? `<button type="button" class="btn-edit-msg fluent-icon-btn !w-7 !h-7" title="Edit"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>` : ""}
+            ${mine ? `<button type="button" class="btn-del-msg fluent-icon-btn !w-7 !h-7 hover:text-red-400" title="Delete"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>` : ""}
           </div>
         `;
+        const starBtn = b.querySelector(".btn-star-msg");
+        if (starBtn) {
+          starBtn.addEventListener("click", () => {
+            if (state.starredMsgs[m.id]) delete state.starredMsgs[m.id];
+            else state.starredMsgs[m.id] = { id: m.id, chatId: cur.id, text: body, createdAt: m.created_at };
+            safeSet("sangam_win_starred", JSON.stringify(state.starredMsgs));
+            renderConversationStream();
+            renderInspectorDrawer();
+          });
+        }
         if (hasViewOnceClosed) {
           b.querySelector(".btn-open-viewonce").addEventListener("click", async () => {
             state.openedThisSession[m.id] = true;
@@ -2218,16 +2263,58 @@
         if (hasEncAudio) {
           const playBtn = b.querySelector(".btn-play-audio");
           const audioEl = b.querySelector(".enc-audio-el");
+          const iconPlay = b.querySelector(".wf-icon-play");
+          const iconPause = b.querySelector(".wf-icon-pause");
+          const timeLbl = b.querySelector(".wf-time");
+          const speedBtn = b.querySelector(".wf-speed");
+          const bars = Array.from(b.querySelectorAll(".wf-bar"));
+          let loaded = false;
+          const fmtSec = (sec) => {
+            const s = Math.max(0, Math.floor(sec || 0));
+            return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+          };
+          audioEl.addEventListener("timeupdate", () => {
+            const dur = isFinite(audioEl.duration) && audioEl.duration > 0 ? audioEl.duration : Number(env.b || 1);
+            const pct = Math.min(1, audioEl.currentTime / dur);
+            const lit = Math.round(pct * bars.length);
+            bars.forEach((el, idx) => el.classList.toggle("played", idx < lit));
+            if (timeLbl) timeLbl.textContent = fmtSec(audioEl.currentTime) + " / " + fmtSec(dur);
+          });
+          audioEl.addEventListener("ended", () => {
+            iconPlay?.classList.remove("hidden");
+            iconPause?.classList.add("hidden");
+            bars.forEach(el => el.classList.remove("played"));
+          });
+          if (speedBtn) {
+            const speeds = [1, 1.5, 2];
+            let spIdx = 0;
+            speedBtn.addEventListener("click", () => {
+              spIdx = (spIdx + 1) % speeds.length;
+              audioEl.playbackRate = speeds[spIdx];
+              speedBtn.textContent = speeds[spIdx] + "x";
+            });
+          }
           playBtn.addEventListener("click", async () => {
             try {
-              const r = await fetch(SUPABASE_URL + "/storage/v1/object/public/message-images/" + env.u);
-              if (!r.ok) throw new Error("Download failed");
-              const dec = await SangamCrypto.mediaDecrypt(new Uint8Array(await r.arrayBuffer()), env.k, env.v);
-              audioEl.src = URL.createObjectURL(new Blob([dec], { type: "audio/webm" }));
-              audioEl.classList.remove("hidden");
-              playBtn.classList.add("hidden");
-              audioEl.play().catch(() => {});
-            } catch (err) { showToast("Could not decrypt voice message"); }
+              if (!loaded) {
+                const r = await fetch(SUPABASE_URL + "/storage/v1/object/public/message-images/" + env.u);
+                if (!r.ok) throw new Error("Download failed");
+                const dec = await SangamCrypto.mediaDecrypt(new Uint8Array(await r.arrayBuffer()), env.k, env.v);
+                audioEl.src = URL.createObjectURL(new Blob([dec], { type: "audio/webm" }));
+                loaded = true;
+              }
+              if (audioEl.paused) {
+                await audioEl.play();
+                iconPlay?.classList.add("hidden");
+                iconPause?.classList.remove("hidden");
+              } else {
+                audioEl.pause();
+                iconPlay?.classList.remove("hidden");
+                iconPause?.classList.add("hidden");
+              }
+            } catch (e) {
+              showToast("Could not play voice note");
+            }
           });
         }
         const reactBtn = b.querySelector(".btn-react");
@@ -2313,29 +2400,85 @@
       `;
 
       if (!cur.isGroup) {
-        document.getElementById("inspectorHeaderTitle").textContent = "Sangam Confluence Identity";
+        document.getElementById("inspectorHeaderTitle").textContent = "Contact Info";
         const p = state.profiles[cur.id] || cur;
         const ls = formatLastSeen(p.last_seen_at);
+        const isOnline = ls === "online";
+        const isMuted = Boolean(state.mutedChats[cur.id]);
+        const isBlocked = Boolean(state.blockedUsers[cur.id]);
+        const chatStarredCount = Object.values(state.starredMsgs).filter(s => s.chatId === cur.id).length;
+        const chatMsgs = state.messages.filter(m => !m.group_id && ((m.sender_id === state.userId && m.recipient_id === cur.id) || (m.sender_id === cur.id && m.recipient_id === state.userId)));
+        const mediaCount = chatMsgs.filter(m => { const e = decodeEnvelope(m); return e && (e.t === "i" || e.t === "v" || e.t === "d"); }).length;
+
         body.innerHTML = `
-          <div class="w-24 h-24 rounded-full bg-[#3CB3D6]/15 p-2 flex items-center justify-center mt-2">
-            <div class="w-20 h-20 rounded-full bg-[#3CB3D6] text-white font-extrabold text-2xl flex items-center justify-center overflow-hidden">
-              ${p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" alt="" class="w-full h-full object-cover">` : (p.display_name || p.name || "?").substring(0, 1).toUpperCase()}
+          <div class="relative mt-1">
+            <div class="w-20 h-20 rounded-full bg-[#3CB3D6]/20 border border-[#3CB3D6]/30 text-[#3CB3D6] font-extrabold text-2xl flex items-center justify-center overflow-hidden">
+              ${p.avatar_url ? `<img src="${escapeHtml(p.avatar_url)}" alt="" class="w-full h-full object-cover">` : escapeHtml((p.display_name || "?").substring(0, 1).toUpperCase())}
             </div>
+            ${isOnline ? `<span class="w-3.5 h-3.5 rounded-full bg-[#5CAB72] border-2 border-[#10171B] absolute bottom-0.5 right-0.5"></span>` : ""}
           </div>
-          <div class="font-extrabold text-base mt-2.5">${escapeHtml(p.display_name || p.name)}</div>
-          <div class="px-3 py-0.5 rounded-full bg-[#3CB3D6]/15 text-[#3CB3D6] font-bold text-xs mt-1">@${escapeHtml(p.username || "friend")}</div>
-          ${ls ? `<div class="text-[11px] opacity-75 mt-1">${escapeHtml(ls)}</div>` : ""}
-          <div class="w-full rounded-2xl p-3 glass-card mt-3 text-xs">${escapeHtml(p.status || ("Where friends and family meet · " + ((window.SANGAM_CONFIG && window.SANGAM_CONFIG.SHORT_ENCRYPTION_LABEL) || "Signal Protocol sessions, sent over TLS")))}</div>
-          <button id="btnInspectorVerifySafety" type="button" class="w-full mt-2 px-3 py-2 rounded-xl bg-[#3CB3D6]/15 text-[#3CB3D6] hover:bg-[#3CB3D6]/25 font-bold text-xs flex items-center justify-center gap-1.5">
-            <span>🔒</span><span>Verify security code</span>
+          <div class="font-bold text-base mt-3">${escapeHtml(p.display_name || "Friend")}</div>
+          <div class="text-xs opacity-65">@${escapeHtml(p.username || "sangam")}</div>
+          <div class="text-[11px] mt-0.5 ${isOnline ? "text-[#5CAB72] font-semibold" : "opacity-55"}">${escapeHtml(ls || "offline")}</div>
+
+          <button id="btnInspectorVerifySafety" type="button" class="w-full mt-4 p-3 rounded-xl glass-card hover:border-[#3CB3D6]/50 flex items-center justify-between text-left transition">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <svg class="w-4 h-4 text-[#3CB3D6] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              <div class="min-w-0">
+                <div class="text-xs font-semibold">Verify Security Code</div>
+                <div class="text-[10px] opacity-60 truncate">Compare 60-digit safety number</div>
+              </div>
+            </div>
+            <svg class="w-4 h-4 opacity-50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
-          ${timerSelectorHtml}
-          <div class="p-3 bg-white rounded-2xl mt-4 shadow">
-            <canvas id="inspectorQrCanvas" width="145" height="145"></canvas>
+
+          <div class="w-full rounded-xl p-3 glass-card mt-3 text-left">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold">Shared Media</span>
+              <span class="text-[11px] text-[#3CB3D6] font-semibold">${mediaCount} files</span>
+            </div>
+            <div class="text-[11px] opacity-60">${mediaCount > 0 ? "Encrypted photos, videos & files are decrypted on demand in the chat stream." : "No shared media in this chat yet."}</div>
           </div>
-          <div class="text-[11px] opacity-70 mt-1.5">Scan with Sangam mobile camera to connect</div>
+
+          ${timerSelectorHtml}
+
+          <div class="w-full rounded-xl p-3 glass-card mt-3 flex flex-col gap-3 text-left">
+            <div id="rowInspectorMute" class="flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-2.5 text-xs">
+                <svg class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5"/><path d="M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                <span>Mute notifications</span>
+              </div>
+              <div class="fluent-switch ${isMuted ? "on" : ""}"></div>
+            </div>
+
+            <button id="btnInspectorStarred" type="button" class="flex items-center justify-between text-xs hover:text-[#3CB3D6] transition">
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Starred messages (${chatStarredCount})</span>
+              </div>
+              <svg class="w-3.5 h-3.5 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <button id="btnInspectorBlock" type="button" class="flex items-center gap-2.5 text-xs ${isBlocked ? "text-[#5CAB72]" : "text-red-400"} hover:opacity-80 transition">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="4.93" x2="19.07" y1="4.93" y2="19.07"/></svg>
+              <span>${isBlocked ? "Unblock contact" : "Block contact"}</span>
+            </button>
+          </div>
         `;
-        drawQr(document.getElementById("inspectorQrCanvas"), "sangam://add?u=" + (p.username || "friend"));
+        body.querySelector("#rowInspectorMute")?.addEventListener("click", () => {
+          if (state.mutedChats[cur.id]) delete state.mutedChats[cur.id];
+          else state.mutedChats[cur.id] = true;
+          safeSet("sangam_win_muted", JSON.stringify(state.mutedChats));
+          renderInspectorDrawer();
+        });
+        body.querySelector("#btnInspectorStarred")?.addEventListener("click", () => openStarredModal(cur.id));
+        body.querySelector("#btnInspectorBlock")?.addEventListener("click", () => {
+          if (state.blockedUsers[cur.id]) delete state.blockedUsers[cur.id];
+          else state.blockedUsers[cur.id] = true;
+          safeSet("sangam_win_blocked", JSON.stringify(state.blockedUsers));
+          showToast(state.blockedUsers[cur.id] ? "Contact blocked on this device" : "Contact unblocked");
+          renderInspectorDrawer();
+        });
       } else {
         document.getElementById("inspectorHeaderTitle").textContent = "Sangam Confluence Circle";
         const g = state.groups.find(x => x.id === cur.id) || cur;
@@ -3098,6 +3241,139 @@
         setTxt("welcomeEncLabel", "🔒 " + window.SANGAM_CONFIG.SHORT_ENCRYPTION_LABEL);
         setTxt("callOverlayEncLabel", window.SANGAM_CONFIG.CALL_OVERLAY_LABEL);
       }
+      // Wire Ctrl+K centered command search pill to sidebar search
+      const topCmd = document.getElementById("inpTopCommandSearch");
+      const sideSearch = document.getElementById("inpSidebarSearch");
+      if (topCmd && sideSearch) {
+        topCmd.addEventListener("input", () => {
+          state.searchQuery = topCmd.value.trim().toLowerCase();
+          sideSearch.value = topCmd.value;
+          renderSidebar();
+        });
+        document.addEventListener("keydown", (ev) => {
+          if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") {
+            ev.preventDefault();
+            topCmd.focus();
+            topCmd.select();
+          }
+        });
+      }
+
+      // Wire In-Chat Search toggle
+      const btnStageSearch = document.getElementById("btnStageSearch");
+      const searchBar = document.getElementById("stageInChatSearchBar");
+      const inpInChat = document.getElementById("inpInChatSearch");
+      const btnCloseInChat = document.getElementById("btnCloseInChatSearch");
+      if (btnStageSearch && searchBar && inpInChat) {
+        btnStageSearch.addEventListener("click", () => {
+          const open = searchBar.classList.contains("hidden");
+          searchBar.classList.toggle("hidden", !open);
+          btnStageSearch.classList.toggle("active-accent", open);
+          if (open) inpInChat.focus();
+          else { state.inChatSearch = ""; inpInChat.value = ""; renderConversationStream(); }
+        });
+        inpInChat.addEventListener("input", () => {
+          state.inChatSearch = inpInChat.value.trim();
+          renderConversationStream();
+        });
+        btnCloseInChat?.addEventListener("click", () => {
+          searchBar.classList.add("hidden");
+          btnStageSearch.classList.remove("active-accent");
+          state.inChatSearch = "";
+          inpInChat.value = "";
+          renderConversationStream();
+        });
+      }
+
+      // Wire Header Verify Security Code shield icon
+      document.getElementById("btnStageVerifyCode")?.addEventListener("click", () => {
+        if (!state.activeChat || state.activeChat.isGroup) {
+          showToast("Safety numbers are available in 1-to-1 chats");
+          return;
+        }
+        const p = state.profiles[state.activeChat.id] || state.activeChat;
+        openVerifySafetyCodeModal(state.activeChat.id, p.display_name || state.activeChat.name);
+      });
+
+      // Wire Composer View-Once button
+      const btnVO = document.getElementById("btnStageViewOnce");
+      if (btnVO) {
+        btnVO.addEventListener("click", () => {
+          state.nextViewOnce = !state.nextViewOnce;
+          btnVO.classList.toggle("active-accent", state.nextViewOnce);
+          showToast(state.nextViewOnce ? "View-once enabled for next photo" : "View-once turned off");
+        });
+      }
+
+      // Wire Starred Messages modal
+      function openStarredModal(filterChatId = null) {
+        const items = Object.values(state.starredMsgs).filter(s => !filterChatId || s.chatId === filterChatId);
+        const rows = items.length
+          ? items.map(s => `<div class="p-3 rounded-xl glass-card mb-2"><div class="text-xs">${escapeHtml(s.text)}</div><div class="text-[10px] opacity-55 mt-1">${new Date(s.createdAt).toLocaleString()}</div></div>`).join("")
+          : `<div class="text-xs opacity-65 text-center py-6">No starred messages yet. Hover any message and click the star icon to save it here.</div>`;
+        openModal("Starred Messages", rows);
+      }
+      document.getElementById("railBtnStarred")?.addEventListener("click", () => openStarredModal(null));
+
+      // Wire Encrypted Backup Export/Restore modal (PBKDF2-120k + AES-256-GCM)
+      document.getElementById("railBtnBackup")?.addEventListener("click", () => {
+        openModal("Encrypted Local Backup", `
+          <div class="space-y-3">
+            <p class="text-xs opacity-80">Export your decrypted desktop history to an AES-256-GCM encrypted <code>.sangam</code> file protected by your backup password (never sent to any server).</p>
+            <input id="inpBackupPw" type="password" placeholder="Enter backup passphrase (min 6 chars)" class="w-full px-3 py-2 rounded-xl glass-input text-xs focus:outline-none">
+            <button id="btnDoExportBackup" type="button" class="w-full py-2 rounded-xl bg-[#3CB3D6] text-[#052029] font-bold text-xs">Export Encrypted Backup</button>
+            <div class="border-t border-white/10 pt-3">
+              <label class="cursor-pointer w-full py-2 rounded-xl glass-card hover:border-[#3CB3D6] font-semibold text-xs flex items-center justify-center">
+                <span>Restore from Encrypted Backup File</span>
+                <input id="inpRestoreBackupFile" type="file" class="hidden">
+              </label>
+            </div>
+          </div>
+        `, (bEl) => {
+          bEl.querySelector("#btnDoExportBackup")?.addEventListener("click", async () => {
+            const pw = bEl.querySelector("#inpBackupPw").value;
+            if (!pw || pw.length < 6) { showToast("Use at least 6 characters for backup password"); return; }
+            const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), outbox: state.outbox });
+            const enc = await SangamCrypto.backupEncrypt(new TextEncoder().encode(payload), pw);
+            const url = URL.createObjectURL(new Blob([enc], { type: "application/octet-stream" }));
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "sangam-backup-" + new Date().toISOString().slice(0, 10) + ".sangam";
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("Encrypted backup saved");
+          });
+          bEl.querySelector("#inpRestoreBackupFile")?.addEventListener("change", async (ev) => {
+            const file = ev.target.files?.[0];
+            const pw = bEl.querySelector("#inpBackupPw").value;
+            if (!file || !pw) { showToast("Enter your backup passphrase first"); return; }
+            try {
+              const dec = await SangamCrypto.backupDecrypt(new Uint8Array(await file.arrayBuffer()), pw);
+              const obj = JSON.parse(new TextDecoder().decode(dec));
+              if (obj && obj.outbox) {
+                Object.assign(state.outbox, obj.outbox);
+                safeSet("sangam_win_outbox", JSON.stringify(state.outbox));
+                renderSidebar();
+                if (state.activeChat) renderConversationStream();
+                showToast("Backup restored successfully");
+                closeModal();
+              }
+            } catch (e) { showToast("Wrong passphrase or invalid backup file"); }
+          });
+        });
+      });
+
+      // Highlight voice recording button cleanly while recording
+      const origVoiceBtn = document.getElementById("btnStageVoiceNote");
+      if (origVoiceBtn) {
+        origVoiceBtn.addEventListener("click", () => {
+          setTimeout(() => {
+            const isRec = Boolean(state.voiceRecorder && state.voiceRecorder.state === "recording");
+            origVoiceBtn.classList.toggle("rec-active", isRec);
+          }, 120);
+        });
+      }
+
       // Hide Android-only Wi-Fi Direct Nearby tab on Windows; voice & video calls are enabled
       document.getElementById("railBtnNearby").classList.add("hidden");
       const ansBtn = document.getElementById("btnOverlayAnswer");
