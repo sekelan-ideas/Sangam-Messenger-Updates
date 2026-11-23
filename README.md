@@ -1,8 +1,3 @@
----
-
-### 2. README for `sekelan-ideas/Sangam-Messenger-Updates` (Public Download & Updates Mirror)
-
-```markdown
 # Sangam Messenger — Official Downloads & Updates
 
 **Where friends & family meet.**  
