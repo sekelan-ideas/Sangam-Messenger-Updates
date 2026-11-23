@@ -20,8 +20,8 @@ android {
         applicationId = "com.sangam.messenger"
         minSdk = 26
         targetSdk = 34
-        versionCode = 131
-        versionName = "2.14.4"
+        versionCode = 132
+        versionName = "2.14.5"
 
         // Backend connection is injected at build time (CI env / -P properties).
         val supabaseUrl: String = (project.findProperty("SUPABASE_URL") as String?)
@@ -109,6 +109,7 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:postgrest-kt:2.6.1")
     implementation("io.github.jan-tennert.supabase:storage-kt:2.6.1")
     implementation("io.ktor:ktor-client-android:2.3.12")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // Firebase Cloud Messaging (push notifications)
     implementation(platform("com.google.firebase:firebase-bom:33.2.0"))

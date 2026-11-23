@@ -379,9 +379,13 @@ class ChatsViewModel : ViewModel() {
         loadChatsCache()
         refresh()
         checkForUpdate()
+        com.sangam.messenger.data.SangamRealtime.ensureConnected()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { Sangam.syncDesktopOutbox() }
+        }
         viewModelScope.launch {
             while (isActive) {
-                delay(8_000)
+                com.sangam.messenger.data.SangamRealtime.awaitWake(12_000L, 6_000L)
                 refresh()
             }
         }
@@ -689,9 +693,10 @@ class ChatViewModel : ViewModel() {
         viewModelScope.launch {
             runCatching { peer = Sangam.profileOf(peerId) }
         }
+        com.sangam.messenger.data.SangamRealtime.ensureConnected()
         viewModelScope.launch {
             while (isActive) {
-                delay(2_000)
+                com.sangam.messenger.data.SangamRealtime.awaitWake(8_000L, 2_500L)
                 refresh()
             }
         }
@@ -715,9 +720,10 @@ class ChatViewModel : ViewModel() {
             applyRows()
         }
         refresh(full = true)
+        com.sangam.messenger.data.SangamRealtime.ensureConnected()
         viewModelScope.launch {
             while (isActive) {
-                delay(2_000)
+                com.sangam.messenger.data.SangamRealtime.awaitWake(8_000L, 2_500L)
                 refresh()
             }
         }

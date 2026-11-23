@@ -3079,8 +3079,80 @@
 
     window.addEventListener("DOMContentLoaded", () => {
       drawQr(document.getElementById("desktopQrCanvas"), "sangam://desktop?id=" + state.desktopCode + "&k=" + state.desktopKey);
+      // Lightweight native WebSocket client for Supabase Realtime (Phoenix Channels)
+      let rtSocket = null;
+      let rtConnected = false;
+      let rtHeartbeat = null;
+      let rtReconnect = null;
+      let rtDebounce = null;
+      let rtRef = 1;
+      let lastFallbackPoll = 0;
+
+      function scheduleRealtimeRefresh() {
+        if (rtDebounce) return;
+        rtDebounce = setTimeout(() => {
+          rtDebounce = null;
+          if (state.session) refreshAllData();
+        }, 150);
+      }
+
+      function connectWindowsRealtime() {
+        if (!state.session || !state.session.access_token || typeof WebSocket === "undefined") return;
+        if (rtSocket && (rtSocket.readyState === WebSocket.OPEN || rtSocket.readyState === WebSocket.CONNECTING)) return;
+        try {
+          const wsUrl = SUPABASE_URL.replace(/^https:/i, "wss:").replace(/^http:/i, "ws:") +
+            "/realtime/v1/websocket?apikey=" + encodeURIComponent(SUPABASE_ANON_KEY) + "&vsn=1.0.0";
+          const ws = new WebSocket(wsUrl);
+          rtSocket = ws;
+          ws.onopen = () => {
+            rtConnected = true;
+            const jwt = state.session?.access_token || "";
+            ["messages", "calls"].forEach(tbl => {
+              ws.send(JSON.stringify({
+                topic: "realtime:public:" + tbl,
+                event: "phx_join",
+                payload: {
+                  config: { postgres_changes: [{ event: "*", schema: "public", table: tbl }] },
+                  access_token: jwt
+                },
+                ref: String(rtRef++)
+              }));
+            });
+            if (rtHeartbeat) clearInterval(rtHeartbeat);
+            rtHeartbeat = setInterval(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ topic: "phoenix", event: "heartbeat", payload: {}, ref: String(rtRef++) }));
+              }
+            }, 25000);
+          };
+          ws.onmessage = (ev) => {
+            const raw = String(ev.data || "");
+            if (raw.includes("postgres_changes") || raw.includes('"INSERT"') || raw.includes('"UPDATE"')) {
+              scheduleRealtimeRefresh();
+            }
+          };
+          ws.onclose = () => {
+            rtConnected = false;
+            if (rtHeartbeat) { clearInterval(rtHeartbeat); rtHeartbeat = null; }
+            if (state.session && !rtReconnect) {
+              rtReconnect = setTimeout(() => { rtReconnect = null; connectWindowsRealtime(); }, 5000);
+            }
+          };
+          ws.onerror = () => { rtConnected = false; };
+        } catch (e) { rtConnected = false; }
+      }
+
       setInterval(pollDesktopQrPairing, 2200);
-      setInterval(() => { if (state.session) refreshAllData(); }, 4000);
+      setInterval(() => {
+        if (!state.session) return;
+        if (!rtConnected) connectWindowsRealtime();
+        const now = Date.now();
+        const intervalMs = rtConnected ? 12000 : 4000;
+        if (now - lastFallbackPoll >= intervalMs) {
+          lastFallbackPoll = now;
+          refreshAllData();
+        }
+      }, 2000);
 
       // Apply saved theme at startup
       function applyTheme(dark) {
