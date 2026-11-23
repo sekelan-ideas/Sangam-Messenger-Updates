@@ -1,136 +1,51 @@
-<div align="center">
+# Sangam Messenger
 
-# Sangam
-
-### Where friends and family meet
-
-A private messenger for Android and Windows, built in India.
-
-`v2.14.2` &nbsp;·&nbsp; `Android 8.0+` &nbsp;·&nbsp; `18.6 MB` &nbsp;·&nbsp; `No phone number required`
-
-<br>
-
-**[ Download the latest APK ](https://github.com/sekelan-ideas/Sangam-releases/releases/latest/download/Sangam.apk)**
-
-[All releases](https://github.com/sekelan-ideas/Sangam-releases/releases) &nbsp;·&nbsp; [Changelog](CHANGELOG.md)
-
-</div>
+**Where friends & family meet.**  
+Sangam is a lightweight, privacy-focused messenger built for **Android (Kotlin + Jetpack Compose)** and **Windows 11 (Electron + Dark Mica Glass UI)**, backed by **Supabase** (PostgreSQL, PostgREST, Realtime WebSockets, Storage, and Deno Edge Functions) and **Firebase Cloud Messaging**.
 
 ---
 
-## What Sangam is
+## Core Architecture
 
-A private messenger that does not ask for your phone number. You sign in with
-an email address, your messages are encrypted on the phone before they leave
-it, and the server only ever holds unreadable ciphertext.
-
-It also makes calls — voice and video — and it works with no internet at all
-when two phones are close to each other.
-
-## Features
-
-### Messaging
-- **One-to-one and group chats**, protected with Signal Protocol sessions
-- Photos, video, documents, voice notes
-- **Disappearing messages**, **view-once photos**, sealed **time capsules**
-- Replies, reactions, forwarding, starring, message editing
-- HD photo switch, per-chat themes, in-chat search, tappable links
-
-### Calls
-- **Voice calls** with mute and speaker
-- **Video calls** with camera flip and picture-in-picture
-- **Call history** per chat, plus a Calls hub across everyone
-- **Rings from a locked screen**, even when the app is closed
-- Audio and video travel as G.711 and JPEG frames over HTTPS through
-  Supabase — no TURN server, no subscription, and it works behind Indian
-  carrier NAT (Jio, Airtel, Vi)
-
-### Groups
-- Admins, co-leaders and members, with **Leader** and **Co-leader** badges
-- Group avatars, descriptions, invite links and **QR codes**
-- **Share** an invite link or QR card anywhere
-- "Only leaders can send" and "members can add people" controls
-
-### Nearby — offline mode
-- Works over **Wi-Fi Direct** with no internet and no server
-- Protected with direct device-to-device key exchange
-- Phones announce themselves as `Sangam-xxxx` and connect automatically
-
-### Devices
-- **Link a second phone by QR** — scan a code from your signed-in phone and
-  you are in, no typing
-- Linked devices list
-- Cloud backup with a recovery key, or an encrypted file export
-
-### Privacy and safety
-- **No phone number required** — email sign-in
-- Messages encrypted on the phone; server holds only ciphertext
-- **Column-level database privacy**: no user can read another user's email or
-  push token, and nobody can overwrite another user's media
-- In-app **reporting** for messages and accounts
-- Published **grievance officer** with the 24-hour / 15-day timelines the
-  IT Rules 2021 and DPDP Act require
-
-## Design
-
-A frosted glass interface throughout — an aurora background, translucent
-bars, glass cards and a floating pill composer — with a Messages · Calls ·
-Nearby switcher at the bottom of the screen.
-
-## Versioning
-
-| Change | Bump | Example |
-| --- | --- | --- |
-| Bug fix | patch | 2.12.2 → 2.12.3 |
-| New feature | minor | 2.12 → 2.13 |
-| Redesign | major | 2.x → 3.0 |
-
-Every release is recorded in [CHANGELOG.md](CHANGELOG.md).
-
-## How it is built
-
-| Layer | Choice |
-| --- | --- |
-| App | Kotlin, Jetpack Compose |
-| Encryption | Signal protocol (libsignal) |
-| Backend | Supabase — auth, Postgres, storage, edge functions |
-| Push | Firebase Cloud Messaging |
-| Offline | Wi-Fi Direct (WifiP2p) |
-| Camera / QR | CameraX, ML Kit barcode scanning |
-| Build | GitHub Actions — compiles, signs and publishes every APK |
-
-## Known limitations
-
-- **Video quality** — the relay caps the frame rate. Real WebRTC would look
-  better but needs a paid TURN server.
-- **Multi-device SQL migration** — follow [`docs/DEPLOY_AND_TEST.md`](docs/DEPLOY_AND_TEST.md) to apply `supabase/migrations/0004a_run_now.sql`, deploy the `push`, `login-lookup`, and `delete-account` Edge Functions, install the updated apps, and then apply `0004b_profiles_lockdown.sql`, `0004c_policy_cleanup.sql`, and `0004d_storage_policies.sql`.
-- **Nearby** — reliable for two phones; three or more is not yet solid.
-- **No Play Services, no scanner** — the QR scanner uses the Play Services
-  barcode model. Everything else works on a de-Googled Android.
-- **Push must be redeployed** (`supabase functions deploy push`) after any
-  change to the edge function.
-
-## Setting up a fresh Supabase project
-
-The SQL for every table lives in the release notes of the version that
-introduced it:
-
-| Table | Release |
-| --- | --- |
-| `calls` | 2.10.0 |
-| `call_chunks` | 2.10.3 |
-| `backups` | 2.8.0 |
-| `abuse_reports` | 2.8.21 |
-| `devices` | 2.7.0 |
-| Group join permissions | 2.12.3 |
-| Storage policies and `profiles` column grants | security block, Nov 2026 |
-
-Without those, calls, backup, reporting and group joining will not work.
+| Layer | Stack & Key Components |
+| :--- | :--- |
+| **Android Client (`app/`)** | Kotlin, Jetpack Compose (Material 3), `libsignal` (`signal-protocol-android:2.8.1`), `EncryptedSharedPreferences`, OkHttp Supabase Realtime WebSocket (`SangamRealtime.kt`), CameraX + on-device ML Kit QR scanner, Bluetooth P2P Nearby mode, FCM push. |
+| **Windows Desktop (`windows/`)** | Electron, Windows 11 Dark/Light Mica Glass UI, zero-emoji inline SVG icon set, custom `libsignal`-compatible Signal Protocol v3 JS engine (`SangamCrypto`), Windows DPAPI key vault, native Chromium Supabase Realtime WebSocket, custom waveform audio player. |
+| **Backend (`supabase/`)** | PostgreSQL with Row-Level Security (RLS) & column-level grants, versioned SQL migrations (`0001`–`0005`), and 4 Deno Edge Functions (`push`, `login-lookup`, `desktop-pair`, `delete-account`). |
 
 ---
 
-<div align="center">
+## Key Features
 
-Made in India · Built with care
+- **Username-Only Identity (`@handle` + QR):** Connect with contacts and join Circles without exposing a personal phone number.
+- **Multi-Device Messaging:** Per-device Signal Protocol sessions (`X3DH` + `Double Ratchet`) with per-device fan-out across linked Android phones and Windows desktops.
+- **Magic-Link QR Desktop Pairing:** The phone requests a single-use magic-link `hashed_token` via `desktop-pair`, encrypts `{ email, tokenHash, syncKey, outbox }` with AES-256-GCM using the QR code's ephemeral key, and Windows exchanges it via `POST /auth/v1/verify` for an independent session before deleting the blob.
+- **Key Verification & TOFU Protection:** Built-in **60-digit Signal v0 Safety Numbers** (`NumericFingerprintGenerator(5200)` on Android, matching SHA-512 × 5,200 on Windows) plus automatic Trust-On-First-Use (TOFU) banners when a contact's identity key changes or a new device is added.
+- **Instant Realtime Delivery:** Persistent Supabase Realtime WebSockets on both Android and Windows with smart background fallback.
+- **Voice & Video Calls:** Two-way 1-to-1 voice and video calls with Curve25519 ECDH + HKDF-SHA256 + AES-256-GCM encrypted media frames.
+- **Offline Nearby Mode (Android):** Direct phone-to-phone Signal-encrypted messaging over Bluetooth with zero internet or server required.
+- **Sealed Time Capsules & View-Once Media:** Send messages that remain visibly sealed until a chosen unlock timestamp, plus disappearing timers (`5m`–`7d`) and View-Once photos/videos.
+- **Account-Free Encrypted Backups:** Export and restore local `.sangam` backups encrypted with PBKDF2-HMAC-SHA256 (120,000 iterations) + AES-256-GCM — no Google Drive or iCloud account required.
 
-</div>
+---
+
+## Security & Metadata Transparency
+
+- **Protected Content:** 1-to-1 and Circle message text, photos, videos, documents, voice notes, 1-to-1 call frames, local backups, and QR pairing blobs are encrypted client-side before leaving the device.
+- **Server-Visible Metadata:** Profile details (`username`, `display_name`, `status`, `avatar_url`), Circle name/description/photo, and routing metadata (`sender_id`, `recipient_id`, timestamps) are visible to the Supabase backend.
+- **Verification Gate:** Client UI encryption wording is controlled centrally via `ENCRYPTION_VERIFIED` (`app/build.gradle.kts` on Android and `windows/app/config.js` on Windows). See [`docs/ENCRYPTION_STATUS.md`](docs/ENCRYPTION_STATUS.md) for the complete data-by-data breakdown.
+
+---
+
+## Repository Structure
+
+```text
+├── app/                     # Android Kotlin + Jetpack Compose application
+├── windows/                 # Windows 11 Electron desktop application
+├── supabase/
+│   ├── migrations/          # Ordered SQL migrations (0001 through 0005_lock_pairing.sql)
+│   ├── functions/           # Edge Functions: push, login-lookup, desktop-pair, delete-account
+│   └── verify.sql           # Post-migration live database verification queries
+├── tests/                   # Crypto, robustness, interop, Round 4 security & acceptance tests
+├── scripts/                 # Static security checks (profile column access scanner)
+└── docs/                    # DEPLOY_AND_TEST.md, ENCRYPTION_STATUS.md, PRIVACY_POLICY.html
