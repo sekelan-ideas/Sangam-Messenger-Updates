@@ -1,5 +1,7 @@
 package com.sangam.messenger.ui
 
+import androidx.compose.material.icons.rounded.*
+
 import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.draw.clip
@@ -243,10 +245,20 @@ fun ChatsScreen(
                         },
                         modifier = Modifier.fillMaxWidth().height(48.dp)
                     ) {
-                        Text(
-                            "\uD83D\uDCF7  Link Windows App / Scan QR Code",
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            androidx.compose.material3.Icon(
+                                androidx.compose.material.icons.Icons.Rounded.QrCodeScanner,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                "Link Windows App / Scan QR",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                     val syncCtx = LocalContext.current
                     Row(
@@ -261,13 +273,25 @@ fun ChatsScreen(
                                 .clip(RoundedCornerShape(14.dp))
                                 .clickable { showLinkQr = !showLinkQr }
                         ) {
-                            Text(
-                                if (showLinkQr) "Hide Phone QR" else "\uD83D\uDCF1 Phone Login QR",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = SangamTeal,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp)
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    androidx.compose.material.icons.Icons.Rounded.QrCode2,
+                                    contentDescription = null,
+                                    tint = SangamTeal,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    if (showLinkQr) "Hide QR" else "Phone QR",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SangamTeal
+                                )
+                            }
                         }
                         Surface(
                             shape = RoundedCornerShape(14.dp),
@@ -281,7 +305,7 @@ fun ChatsScreen(
                                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                             android.widget.Toast.makeText(
                                                 syncCtx,
-                                                if (ok) "\uD83D\uDCBB Synced chat history to Windows!"
+                                                if (ok) "Synced chat history to Windows"
                                                 else "Could not sync history",
                                                 android.widget.Toast.LENGTH_SHORT
                                             ).show()
@@ -289,13 +313,25 @@ fun ChatsScreen(
                                     }
                                 }
                         ) {
-                            Text(
-                                "\uD83D\uDD04 Sync to Windows",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = SangamOrange,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 10.dp)
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    androidx.compose.material.icons.Icons.Rounded.Sync,
+                                    contentDescription = null,
+                                    tint = SangamOrange,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "Sync Windows",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = SangamOrange
+                                )
+                            }
                         }
                     }
                     if (showLinkQr) {
@@ -335,7 +371,7 @@ fun ChatsScreen(
                                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                             android.widget.Toast.makeText(
                                                 syncCtx,
-                                                if (ok) "\uD83D\uDCBB Desktop login approved!"
+                                                if (ok) "Desktop login approved"
                                                 else "Could not approve desktop login — scan a fresh QR code",
                                                 android.widget.Toast.LENGTH_LONG
                                             ).show()
@@ -521,7 +557,7 @@ fun ChatsScreen(
                             kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                 android.widget.Toast.makeText(
                                     scanCtx,
-                                    if (ok) "\uD83D\uDCBB Desktop login approved!"
+                                    if (ok) "Desktop login approved"
                                     else "Could not approve desktop login — scan a fresh QR code on Windows",
                                     android.widget.Toast.LENGTH_LONG
                                 ).show()
@@ -1220,7 +1256,7 @@ private fun UpdateBanner(vm: ChatsViewModel) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "\u2728 Sangam ${upd.version} is ready",
+                    "Sangam ${upd.version} is ready",
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
@@ -1248,7 +1284,7 @@ private fun UpdateBanner(vm: ChatsViewModel) {
                     )
                 }
                 "ready" -> TextButton(onClick = { vm.installUpdate() }) {
-                    Text("Install now \u2713")
+                    Text("Install now")
                 }
                 "error" -> TextButton(onClick = { vm.downloadUpdate() }) {
                     Text("Download failed \u2014 tap to retry")

@@ -1,5 +1,7 @@
 package com.sangam.messenger.ui
 
+import androidx.compose.material.icons.rounded.*
+
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
@@ -626,22 +628,44 @@ private fun CallButton(
     onClick: () -> Unit,
     textColor: Color = Color.White
 ) {
-    Surface(
-        shape = CircleShape,
-        color = tint,
-        modifier = Modifier
-            .size(64.dp)
-            .clickable(onClick = onClick)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(
-                label,
-                color = textColor,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center
-            )
+    val iconVec = when (label) {
+        "Answer" -> androidx.compose.material.icons.Icons.Rounded.Call
+        "Decline", "Hang up" -> androidx.compose.material.icons.Icons.Rounded.CallEnd
+        "Mute" -> androidx.compose.material.icons.Icons.Rounded.Mic
+        "Unmute" -> androidx.compose.material.icons.Icons.Rounded.MicOff
+        "Speaker" -> androidx.compose.material.icons.Icons.Rounded.VolumeUp
+        "Earpiece" -> androidx.compose.material.icons.Icons.Rounded.Hearing
+        "Cam Off" -> androidx.compose.material.icons.Icons.Rounded.Videocam
+        "Cam On" -> androidx.compose.material.icons.Icons.Rounded.VideocamOff
+        "Flip" -> androidx.compose.material.icons.Icons.Rounded.Cameraswitch
+        else -> androidx.compose.material.icons.Icons.Rounded.Call
+    }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(
+            shape = CircleShape,
+            color = tint,
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .clickable(onClick = onClick)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                androidx.compose.material3.Icon(
+                    imageVector = iconVec,
+                    contentDescription = label,
+                    tint = textColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
         }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Medium,
+            fontSize = 11.sp,
+            textAlign = TextAlign.Center
+        )
     }
 }
 

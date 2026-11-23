@@ -1,5 +1,10 @@
 package com.sangam.messenger.ui
 
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -434,8 +439,15 @@ fun AuthScreen(onDone: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Rounded.QrCodeScanner,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    "\uD83D\uDCF1  Link this phone by scanning QR from your other phone",
+                    "Link this phone via QR code",
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )

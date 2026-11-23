@@ -1,5 +1,7 @@
 package com.sangam.messenger.ui
 
+import androidx.compose.material.icons.rounded.*
+
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import com.sangam.messenger.ui.theme.SangamOrange
@@ -255,7 +257,7 @@ fun FriendProfileDialog(
                                 modifier = Modifier.padding(vertical = 10.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("\uD83D\uDCDE", style = MaterialTheme.typography.titleMedium)
+                                androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Call, contentDescription = "Voice", tint = SangamTeal, modifier = Modifier.size(22.dp))
                                 Text(
                                     "Voice",
                                     style = MaterialTheme.typography.labelSmall,
@@ -276,7 +278,7 @@ fun FriendProfileDialog(
                                 modifier = Modifier.padding(vertical = 10.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("\uD83C\uDFA5", style = MaterialTheme.typography.titleMedium)
+                                androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Videocam, contentDescription = "Video", tint = SangamGreen, modifier = Modifier.size(22.dp))
                                 Text(
                                     "Video",
                                     style = MaterialTheme.typography.labelSmall,
@@ -297,7 +299,7 @@ fun FriendProfileDialog(
                                 modifier = Modifier.padding(vertical = 10.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text("\uD83D\uDD33", style = MaterialTheme.typography.titleMedium)
+                                androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.QrCode2, contentDescription = "QR Card", tint = SangamOrange, modifier = Modifier.size(22.dp))
                                 Text(
                                     if (showContactQr) "Hide QR" else "QR Card",
                                     style = MaterialTheme.typography.labelSmall,
@@ -325,29 +327,51 @@ fun FriendProfileDialog(
                                 .fillMaxWidth()
                                 .padding(horizontal = 14.dp, vertical = 6.dp)
                         ) {
-                            Text(
-                                "\uD83D\uDEE1\uFE0F  Report " + profile.display_name,
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.SemiBold,
-                                style = MaterialTheme.typography.bodySmall,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { confirmReport = true }
-                                    .padding(vertical = 8.dp)
-                            )
+                                    .padding(vertical = 9.dp)
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    androidx.compose.material.icons.Icons.Rounded.OutlinedFlag,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    "Report " + profile.display_name,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                             HorizontalDivider(
                                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f)
                             )
-                            Text(
-                                "\uD83D\uDEAB  Block " + profile.display_name,
-                                color = MaterialTheme.colorScheme.error,
-                                fontWeight = FontWeight.SemiBold,
-                                style = MaterialTheme.typography.bodySmall,
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { confirmBlock = true }
-                                    .padding(vertical = 8.dp)
-                            )
+                                    .padding(vertical = 9.dp)
+                            ) {
+                                androidx.compose.material3.Icon(
+                                    androidx.compose.material.icons.Icons.Rounded.Block,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    "Block " + profile.display_name,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.SemiBold,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                     }
                 }

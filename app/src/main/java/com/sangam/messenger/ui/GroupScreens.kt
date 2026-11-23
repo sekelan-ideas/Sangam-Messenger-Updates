@@ -1,5 +1,7 @@
 package com.sangam.messenger.ui
 
+import androidx.compose.material.icons.rounded.*
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.clickable
 import android.net.Uri
@@ -310,13 +312,25 @@ fun GroupInfoDialog(
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable { showGroupQr = !showGroupQr }
                                 ) {
-                                    Text(
-                                        if (showGroupQr) "Hide QR" else "\uD83D\uDD33 QR Code",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SangamTeal,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 9.dp)
+                                    ) {
+                                        androidx.compose.material3.Icon(
+                                            androidx.compose.material.icons.Icons.Rounded.QrCode2,
+                                            contentDescription = null,
+                                            tint = SangamTeal,
+                                            modifier = Modifier.size(15.dp)
+                                        )
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(
+                                            if (showGroupQr) "Hide QR" else "QR Code",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = SangamTeal
+                                        )
+                                    }
                                 }
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
@@ -341,13 +355,25 @@ fun GroupInfoDialog(
                                             }
                                         }
                                 ) {
-                                    Text(
-                                        "\uD83D\uDCE4 Share",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SangamGreen,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 9.dp)
+                                    ) {
+                                        androidx.compose.material3.Icon(
+                                            androidx.compose.material.icons.Icons.Rounded.Share,
+                                            contentDescription = null,
+                                            tint = SangamGreen,
+                                            modifier = Modifier.size(15.dp)
+                                        )
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(
+                                            "Share",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = SangamGreen
+                                        )
+                                    }
                                 }
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
@@ -369,13 +395,25 @@ fun GroupInfoDialog(
                                             }
                                         }
                                 ) {
-                                    Text(
-                                        "\uD83D\uDCCB Copy",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = SangamOrange,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center,
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 9.dp)
+                                    ) {
+                                        androidx.compose.material3.Icon(
+                                            androidx.compose.material.icons.Icons.Rounded.ContentCopy,
+                                            contentDescription = null,
+                                            tint = SangamOrange,
+                                            modifier = Modifier.size(15.dp)
+                                        )
+                                        Spacer(Modifier.width(5.dp))
+                                        Text(
+                                            "Copy",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = SangamOrange
+                                        )
+                                    }
                                 }
                             }
                             if (showGroupQr) {

@@ -1,5 +1,7 @@
 package com.sangam.messenger.ui
 
+import androidx.compose.material.icons.rounded.*
+
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -1529,7 +1531,7 @@ fun ChatScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "\uD83D\uDC41\uFE0F  View once",
+                        "View once photo or video",
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1828,7 +1830,7 @@ private fun MessageBubble(
                         }
                         message.viewOnce && message.mine -> {
                             Column(Modifier.padding(4.dp)) {
-                                Text("\uD83D\uDD12", fontSize = 28.sp)
+                                androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.Lock, contentDescription = null, tint = onBubble, modifier = Modifier.size(24.dp))
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     if (opened) "View once · Opened" else "View once · Sent",
@@ -1854,7 +1856,7 @@ private fun MessageBubble(
                                     }
                                     .padding(4.dp)
                             ) {
-                                Text("\uD83D\uDD12", fontSize = 30.sp)
+                                androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.VisibilityOff, contentDescription = null, tint = onBubble, modifier = Modifier.size(26.dp))
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     "View once",
@@ -1870,7 +1872,7 @@ private fun MessageBubble(
                             }
                         }
                         message.unlockAt != null && now < message.unlockAt -> {
-                            Text("\uD83D\uDD70\uFE0F", fontSize = 34.sp)
+                            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Rounded.HourglassTop, contentDescription = null, tint = onBubble, modifier = Modifier.size(28.dp))
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 "Time capsule — still sealed",
@@ -2024,7 +2026,7 @@ private fun MessageBubble(
                         else -> {
                             if (message.type == "c") {
                                 Text(
-                                    "\uD83D\uDD70\uFE0F Capsule opened",
+                                    "Capsule opened",
                                     color = onBubbleSubtle,
                                     style = MaterialTheme.typography.labelSmall
                                 )
@@ -2081,7 +2083,7 @@ private fun MessageBubble(
                                         }
                                 ) {
                                     Text(
-                                        "\uD83C\uDF0A  Join Sangam Group",
+                                        "Join Sangam Circle",
                                         color = onBubble,
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.labelMedium,
@@ -2101,7 +2103,7 @@ private fun MessageBubble(
                                         }
                                 ) {
                                     Text(
-                                        "\uD83D\uDC4B  Connect with @" + targetUser,
+                                        "Connect with @" + targetUser,
                                         color = onBubble,
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.labelMedium,
@@ -2126,7 +2128,7 @@ private fun MessageBubble(
                                         }
                                 ) {
                                     Text(
-                                        "\uD83D\uDD17  Open link",
+                                        "Open link",
                                         color = onBubble,
                                         fontWeight = FontWeight.SemiBold,
                                         style = MaterialTheme.typography.labelSmall,
@@ -2517,7 +2519,7 @@ private fun CapsuleDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Time capsule \uD83D\uDD70\uFE0F", fontWeight = FontWeight.SemiBold) },
+        title = { Text("Time capsule", fontWeight = FontWeight.SemiBold) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 Text(
