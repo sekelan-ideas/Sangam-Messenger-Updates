@@ -334,3 +334,19 @@ If any step fails, send:
 6. **Flip `ENCRYPTION_VERIFIED` ONLY after real-device tests pass:**
    - Android: set `buildConfigField("boolean", "ENCRYPTION_VERIFIED", "true")` in `app/build.gradle.kts`.
    - Windows: set `ENCRYPTION_VERIFIED: true` in `windows/app/config.js`.
+
+
+---
+
+## Supabase Realtime Requirement (Pack A — Instant WebSocket Delivery)
+
+Both Android (`SangamRealtime.kt`) and Windows (`windows/app/app.js`) connect to Supabase Realtime (`realtime:public:messages` and `realtime:public:calls`) to wake up immediately on new messages, read receipts, and incoming calls.
+
+1. **Enable Realtime Replication on `messages` and `calls`:**
+   - In **Supabase Dashboard → Database → Replication → `supabase_realtime`**, toggle ON **`public.messages`** and **`public.calls`**, **OR** run in the SQL Editor:
+     ```sql
+     ALTER PUBLICATION supabase_realtime ADD TABLE public.messages, public.calls;
+     ```
+2. **Automatic Safe Fallback Behavior:**
+   - Neither app slows down its fallback HTTP polling until the Supabase Realtime server confirms the channel subscription (`phx_reply` with `status: "ok"`) or delivers a real `postgres_changes` event.
+   - If Realtime replication is not enabled yet (or the WebSocket disconnects), Android stays at its original **2s** (active chat) / **8s** (chat list) polling speed and Windows stays at its original **4s** polling speed.

@@ -186,6 +186,9 @@ def test_local_db_sent_messages():
 def test_edge_functions():
     print("=== 2. EDGE FUNCTIONS VERIFICATION (simulated / text search only: delete-account, login-lookup, push, desktop-pair) ===")
     del_path = os.path.join(MAIN_ROOT, "supabase", "functions", "delete-account", "index.ts")
+    if not os.path.exists(del_path):
+        print("  [SKIP] Running inside standalone Windows kit (supabase/ Edge Functions live in Sangam-main repo).\n")
+        return
     lu_path = os.path.join(MAIN_ROOT, "supabase", "functions", "login-lookup", "index.ts")
     push_path = os.path.join(MAIN_ROOT, "supabase", "functions", "push", "index.ts")
 

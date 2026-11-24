@@ -385,7 +385,7 @@ class ChatsViewModel : ViewModel() {
         }
         viewModelScope.launch {
             while (isActive) {
-                com.sangam.messenger.data.SangamRealtime.awaitWake(12_000L, 6_000L)
+                com.sangam.messenger.data.SangamRealtime.awaitWake(12_000L, 8_000L)
                 refresh()
             }
         }
@@ -696,7 +696,7 @@ class ChatViewModel : ViewModel() {
         com.sangam.messenger.data.SangamRealtime.ensureConnected()
         viewModelScope.launch {
             while (isActive) {
-                com.sangam.messenger.data.SangamRealtime.awaitWake(8_000L, 2_500L)
+                com.sangam.messenger.data.SangamRealtime.awaitWake(8_000L, 2_000L)
                 refresh()
             }
         }
@@ -723,7 +723,7 @@ class ChatViewModel : ViewModel() {
         com.sangam.messenger.data.SangamRealtime.ensureConnected()
         viewModelScope.launch {
             while (isActive) {
-                com.sangam.messenger.data.SangamRealtime.awaitWake(8_000L, 2_500L)
+                com.sangam.messenger.data.SangamRealtime.awaitWake(8_000L, 2_000L)
                 refresh()
             }
         }

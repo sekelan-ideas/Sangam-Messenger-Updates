@@ -7,7 +7,7 @@ const path = require("path");
 const vm = require("vm");
 const crypto = require("crypto");
 
-function createAppContext(customFetch) {
+function createAppContext(customFetch, opts = {}) {
   const localStore = new Map();
   let vaultData = null;
   let vaultWrites = 0;
@@ -100,6 +100,7 @@ function createAppContext(customFetch) {
   const p1 = path.resolve(__dirname, "..", "app", "app.js");
   const appJsPath = fs.existsSync(p1) ? p1 : path.resolve(__dirname, "..", "windows", "app", "app.js");
   const code = fs.readFileSync(appJsPath, "utf8");
+  if (opts.testMode !== false) sandbox.window.__SANGAM_TEST_MODE__ = true;
   vm.createContext(sandbox);
   vm.runInContext(code, sandbox, { filename: "app.js" });
 

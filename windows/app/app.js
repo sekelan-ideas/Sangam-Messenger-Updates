@@ -1079,7 +1079,16 @@
       safeSet("sangam_win_new_dev", JSON.stringify(state.newDevicePeers));
       if (state.activeChat && state.activeChat.id === peerId) renderConversationStream();
     }
-    if (typeof window !== "undefined") window.SangamTofu = { state, recordPeerTofuState, acknowledgePeerSecurityNotice };
+    if (typeof window !== "undefined" && window.__SANGAM_TEST_MODE__ === true) {
+      window.SangamTofu = { state, recordPeerTofuState, acknowledgePeerSecurityNotice };
+      window.SangamTestHooks = {
+        state,
+        maybeNotifyMessage: (m, env) => maybeNotifyIncoming(m, env),
+        sendSangamEnvelope: (p, e, g) => sendSangamEnvelope(p, e, g),
+        renderSidebar: () => renderSidebar(),
+        renderConversationStream: () => renderConversationStream()
+      };
+    }
 
     async function openVerifySafetyCodeModal(peerId, peerName) {
       openModal("Verify security code", `
@@ -1474,6 +1483,10 @@
 
     async function sendSangamEnvelope(peerId, envObj, groupId = null) {
       const chatKey = groupId || peerId;
+      if (!groupId && peerId && state.blockedUsers[peerId]) {
+        showToast("Unblock to send");
+        throw new Error("Unblock to send");
+      }
       if (groupId && !canPostInGroup(groupId)) {
         throw new Error("Only the leader and co-leaders can send here.");
       }
@@ -1558,6 +1571,8 @@
     function maybeNotifyIncoming(m, env) {
       if (!state.initialPollDone || !state.notificationsOn) return;
       if (!m || m.sender_id === state.userId || state.notifiedMsgIds[m.id]) return;
+      const notifChatKey = m.group_id || m.sender_id;
+      if (state.blockedUsers[m.sender_id] || state.blockedUsers[notifChatKey] || state.mutedChats[notifChatKey]) return;
       state.notifiedMsgIds[m.id] = true;
       if (env && (env.t === "r" || env.t === "e" || env.t === "o")) return;
       if (typeof document !== "undefined" && typeof document.hasFocus === "function" && document.hasFocus()) return;
@@ -1827,6 +1842,7 @@
       });
 
       Object.keys(peerBuckets).forEach(pid => {
+        if (state.blockedUsers[pid]) return;
         const list = peerBuckets[pid].filter(m => {
           const env = decodeEnvelope(m);
           return !env || (env.t !== "r" && env.t !== "e" && env.t !== "o");
@@ -2065,6 +2081,7 @@
       if (!stream || !state.activeChat) return;
       const cur = state.activeChat;
       const raw = state.messages.filter(m => {
+        if (m.sender_id !== state.userId && state.blockedUsers[m.sender_id]) return false;
         if (cur.isGroup) return m.group_id === cur.id;
         return !m.group_id && ((m.sender_id === state.userId && m.recipient_id === cur.id) || (m.sender_id === cur.id && m.recipient_id === state.userId));
       });
@@ -2476,7 +2493,9 @@
           if (state.blockedUsers[cur.id]) delete state.blockedUsers[cur.id];
           else state.blockedUsers[cur.id] = true;
           safeSet("sangam_win_blocked", JSON.stringify(state.blockedUsers));
-          showToast(state.blockedUsers[cur.id] ? "Contact blocked on this device" : "Contact unblocked");
+          showToast(state.blockedUsers[cur.id] ? "Contact blocked" : "Contact unblocked");
+          renderSidebar();
+          renderConversationStream();
           renderInspectorDrawer();
         });
       } else {
@@ -3012,6 +3031,7 @@
       const now = Date.now();
       const ringing = (state.calls || []).find(c =>
         c.callee === state.userId &&
+        !state.blockedUsers[c.caller] &&
         c.status === "ringing" &&
         c.created_at &&
         (now - new Date(c.created_at).getTime() < 60000)
@@ -3082,6 +3102,7 @@
       // Lightweight native WebSocket client for Supabase Realtime (Phoenix Channels)
       let rtSocket = null;
       let rtConnected = false;
+      let rtSubscribed = false;
       let rtHeartbeat = null;
       let rtReconnect = null;
       let rtDebounce = null;
@@ -3106,6 +3127,7 @@
           rtSocket = ws;
           ws.onopen = () => {
             rtConnected = true;
+            rtSubscribed = false;
             const jwt = state.session?.access_token || "";
             ["messages", "calls"].forEach(tbl => {
               ws.send(JSON.stringify({
@@ -3127,18 +3149,34 @@
           };
           ws.onmessage = (ev) => {
             const raw = String(ev.data || "");
+            try {
+              const parsed = JSON.parse(raw);
+              if (
+                parsed &&
+                parsed.event === "phx_reply" &&
+                typeof parsed.topic === "string" &&
+                parsed.topic.startsWith("realtime:public:") &&
+                parsed.payload &&
+                parsed.payload.status === "ok"
+              ) {
+                rtSubscribed = true;
+                return;
+              }
+            } catch (e) {}
             if (raw.includes("postgres_changes") || raw.includes('"INSERT"') || raw.includes('"UPDATE"')) {
+              rtSubscribed = true;
               scheduleRealtimeRefresh();
             }
           };
           ws.onclose = () => {
             rtConnected = false;
+            rtSubscribed = false;
             if (rtHeartbeat) { clearInterval(rtHeartbeat); rtHeartbeat = null; }
             if (state.session && !rtReconnect) {
               rtReconnect = setTimeout(() => { rtReconnect = null; connectWindowsRealtime(); }, 5000);
             }
           };
-          ws.onerror = () => { rtConnected = false; };
+          ws.onerror = () => { rtConnected = false; rtSubscribed = false; };
         } catch (e) { rtConnected = false; }
       }
 
@@ -3147,7 +3185,7 @@
         if (!state.session) return;
         if (!rtConnected) connectWindowsRealtime();
         const now = Date.now();
-        const intervalMs = rtConnected ? 12000 : 4000;
+        const intervalMs = (rtConnected && rtSubscribed) ? 12000 : 4000;
         if (now - lastFallbackPoll >= intervalMs) {
           lastFallbackPoll = now;
           refreshAllData();
@@ -3660,6 +3698,11 @@
             </div>
 
             <div class="p-3 rounded-xl glass-card flex flex-col gap-2">
+              <div class="font-bold text-xs text-[#3CB3D6]">Blocked contacts</div>
+              <div id="settingsBlockedList" class="flex flex-col gap-1.5"></div>
+            </div>
+
+            <div class="p-3 rounded-xl glass-card flex flex-col gap-2">
               <div class="font-bold text-xs text-[#3CB3D6]">Cloud Backup Restore</div>
               <input id="inpRestoreRecoveryKey" type="text" placeholder="Recovery key (AbCd-EfGh-...)" class="w-full px-3 py-1.5 rounded-xl glass-input text-xs font-mono">
               <button id="btnRestoreCloudBackup" type="button" class="w-full py-1.5 rounded-xl bg-[#3CB3D6]/20 text-[#3CB3D6] font-bold">Restore My Chats</button>
@@ -3691,6 +3734,37 @@
           if (cfg.privacyUrl) privBtn.addEventListener("click", () => window.open(cfg.privacyUrl));
           else privBtn.classList.add("hidden");
           b.querySelector("#btnSettingsTheme").addEventListener("click", () => document.getElementById("btnTopTheme").click());
+          const renderBlockedSettings = () => {
+            const box = b.querySelector("#settingsBlockedList");
+            if (!box) return;
+            const ids = Object.keys(state.blockedUsers).filter(id => state.blockedUsers[id]);
+            if (ids.length === 0) {
+              box.innerHTML = `<div class="text-[11px] opacity-65">No blocked contacts.</div>`;
+              return;
+            }
+            box.innerHTML = ids.map(uid => {
+              const p = state.profiles[uid] || { display_name: uid, username: "" };
+              return `<div class="flex items-center justify-between gap-2 py-1 border-b border-white/[0.06] last:border-0">
+                <div class="truncate"><span class="font-semibold">${escapeHtml(p.display_name || uid)}</span>${p.username ? ` <span class="opacity-60">@${escapeHtml(p.username)}</span>` : ""}</div>
+                <button type="button" data-unblock-uid="${escapeHtml(uid)}" class="btn-unblock-setting px-2.5 py-0.5 rounded-lg bg-[#3CB3D6]/20 text-[#3CB3D6] font-bold text-[11px] shrink-0">Unblock</button>
+              </div>`;
+            }).join("");
+            box.querySelectorAll(".btn-unblock-setting").forEach(btn => {
+              btn.addEventListener("click", () => {
+                const uid = btn.dataset.unblockUid;
+                delete state.blockedUsers[uid];
+                safeSet("sangam_win_blocked", JSON.stringify(state.blockedUsers));
+                showToast("Contact unblocked");
+                renderBlockedSettings();
+                renderSidebar();
+                if (state.activeChat && state.activeChat.id === uid) {
+                  renderConversationStream();
+                  renderInspectorDrawer();
+                }
+              });
+            });
+          };
+          renderBlockedSettings();
           b.querySelector("#chkNotifOn").addEventListener("change", (ev) => {
             state.notificationsOn = ev.target.checked;
             safeSet("sangam_win_notif_on", String(state.notificationsOn));
@@ -3809,6 +3883,10 @@
         const inp = document.getElementById("inpStageMessage");
         const txt = inp.value.trim();
         if (!txt || !state.activeChat) return;
+        if (!state.activeChat.isGroup && state.blockedUsers[state.activeChat.id]) {
+          showToast("Unblock to send");
+          return;
+        }
         inp.value = "";
         const env = { t: "t", b: txt };
         if (state.replyTo) {

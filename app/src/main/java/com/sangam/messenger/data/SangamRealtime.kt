@@ -42,6 +42,7 @@ object SangamRealtime {
     @Volatile private var ws: WebSocket? = null
     @Volatile private var connectedUserId: String? = null
     @Volatile private var isConnected: Boolean = false
+    @Volatile private var isSubscribed: Boolean = false
     private var heartbeatJob: Job? = null
     private var reconnectJob: Job? = null
 
@@ -67,6 +68,7 @@ object SangamRealtime {
         ws = httpClient.newWebSocket(req, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 isConnected = true
+                isSubscribed = false
                 sendJoin(webSocket, "realtime:public:messages", jwt, listOf(
                     Triple("*", "public", "messages")
                 ))
@@ -77,18 +79,33 @@ object SangamRealtime {
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
+                runCatching {
+                    val obj = JSONObject(text)
+                    val ev = obj.optString("event", "")
+                    val topic = obj.optString("topic", "")
+                    if (ev == "phx_reply" && topic.startsWith("realtime:public:")) {
+                        val status = obj.optJSONObject("payload")?.optString("status", "")
+                        if (status == "ok") {
+                            isSubscribed = true
+                            return
+                        }
+                    }
+                }
                 if (text.contains("postgres_changes") || text.contains("INSERT") || text.contains("UPDATE")) {
+                    isSubscribed = true
                     events.tryEmit("change")
                 }
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 isConnected = false
+                isSubscribed = false
                 scheduleReconnect()
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 isConnected = false
+                isSubscribed = false
                 scheduleReconnect()
             }
         })
@@ -151,6 +168,7 @@ object SangamRealtime {
 
     fun disconnect() {
         isConnected = false
+        isSubscribed = false
         heartbeatJob?.cancel()
         reconnectJob?.cancel()
         runCatching { ws?.close(1000, "disconnect") }
@@ -163,7 +181,7 @@ object SangamRealtime {
      * [fallbackConnectedMs] / [fallbackDisconnectedMs] elapses.
      */
     suspend fun awaitWake(fallbackConnectedMs: Long = 12_000L, fallbackDisconnectedMs: Long = 4_000L) {
-        val waitMs = if (isConnected) fallbackConnectedMs else fallbackDisconnectedMs
+        val waitMs = if (isConnected && isSubscribed) fallbackConnectedMs else fallbackDisconnectedMs
         withTimeoutOrNull(waitMs) {
             events.first()
         }
